@@ -59,7 +59,7 @@ does the startup restore.
 Install it straight from GitHub through the plugin manager:
 
 ```
-github:home-i/dsh-window-size#v1.1.0
+github:home-i/dsh-window-size#v1.1.1
 ```
 
 Or, from the Desktop app's **Plugins** page, install the bundle from a local
