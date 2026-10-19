@@ -1,62 +1,51 @@
 # dsh-window-size
 
-Remember the **DeepSeek Harness Desktop** window size across restarts, keep it
-centered, and change it from a settings page instead of dragging the frame.
+**简体中文** · [English](README.en.md)
 
-![platform: Windows](https://img.shields.io/badge/platform-Windows-0078D4)
-![host: DSH Desktop](https://img.shields.io/badge/host-DSH%20Desktop-4f6ef7)
-![license: MIT](https://img.shields.io/badge/license-MIT-green)
+记住 **DeepSeek Harness 桌面版**的窗口尺寸：重启后自动恢复、默认水平垂直居中，并且可以在设置页里直接改，不用手动拖窗口。
 
-- **First launch**: no record yet → **1440 × 900**, centered.
-- **Every manual resize** is recorded and restored on the next launch.
-- **Centered by default**: each launch places the window in the middle of the
-  current display's work area. Turn it off to keep the last position instead.
-- **Forgiving**: maximized, minimized, and hidden states are never recorded, so a
-  maximized window does not reopen oversized; sizes are clamped to the monitor's
-  work area, so a window remembered on a bigger display still fits.
-- **Settings page**: `Settings → Window size` sets the size by hand, records the
-  current window, re-centers, or resets to the default.
-- On non-Desktop Hosts (`dsh` CLI, servers) the bundle loads but reports the
-  settings page as unavailable.
+![平台：Windows](https://img.shields.io/badge/platform-Windows-0078D4)
+![宿主：DSH 桌面版](https://img.shields.io/badge/host-DSH%20Desktop-4f6ef7)
+![许可证：MIT](https://img.shields.io/badge/license-MIT-green)
 
-## Why a Host plugin
+- **首次启动**：没有记录时使用 **1440 × 900**，并居中。
+- **每次手动调整**：自动记录，下次启动恢复。
+- **默认居中**：每次启动都把窗口放在当前显示器工作区正中；可在设置页关闭，改为沿用上次位置。
+- **不会记错**：最大化、最小化、隐藏状态一律不记录，避免下次以超大尺寸打开；恢复时会按当前显示器工作区收缩，换显示器也能用。
+- **设置页**：`设置 → 窗口尺寸` 可手动设定尺寸、记住当前尺寸、立即居中、恢复默认。
+- 在非桌面版 Host（`dsh` 命令行、服务器）上仍可加载，但设置页会提示不可用。
 
-The Desktop shell creates its main window at a fixed `1280 × 820` and persists no
-window state. A renderer-side plugin cannot fix that: in Electron,
-`window.resizeTo()` is routed to `WebContentsDelegate::SetContentsBounds`, which
-Electron only forwards as the `content-bounds-updated` event — it does **not**
-resize the `BrowserWindow`.
+## 为什么必须做成 Host 插件
 
-So the Host process does the work. It uses `koffi` (already a dependency of
-`@deepseek-ai/dsh-desktop-host`) to call `FindWindowExW` / `GetWindowRect` /
-`GetDpiForWindow` / `SetWindowPos` on the shell's window, and applies the
-remembered size **while the window is still hidden**, before the first paint.
+桌面版创建主窗口时把尺寸写死为 `1280 × 820`，也不持久化任何窗口状态。渲染端改不了它：在 Electron 里，`window.resizeTo()` 会被路由到 `WebContentsDelegate::SetContentsBounds`，Electron 只把它转发成 `content-bounds-updated` 事件，**并不会真的改变 `BrowserWindow` 的大小**。
 
-## Settings page
+所以真正干活的是 Host 进程：它通过 `koffi`（`@deepseek-ai/dsh-desktop-host` 本来就依赖它）调用 `FindWindowExW` / `GetWindowRect` / `GetDpiForWindow` / `SetWindowPos`，并且**抢在窗口显示前**完成设置，避免先闪一下旧尺寸。
 
-`Settings → Window size` is a `settings.section` entry. It shows the live size,
-the recorded size, and the last action (with a timestamp), and offers:
+## 设置页
 
-| Control | Effect |
+`设置 → 窗口尺寸` 是一个 `settings.section` 条目。页面上会显示当前窗口尺寸、已记录尺寸和上次动作（含时间），并提供：
+
+| 控件 | 作用 |
 |---|---|
-| Width / Height + **Apply and remember** | resizes the window now and stores that size |
-| **Remember current size** | stores the size the window has right now |
-| **Re-apply** | applies the recorded size again, with the current centering |
-| **Restore default** | applies the configured default `1440 × 900` |
-| **Center on launch** toggle | whether restores center the window |
-| **Center now** | centers the window without changing its size |
-| **Enable size memory** toggle | off = never restore and never record |
+| 宽度 / 高度 + **应用并记住** | 立刻改变窗口尺寸并保存 |
+| **记住当前尺寸** | 把你现在手动拖出来的尺寸存下来 |
+| **重新应用** | 用记录值再应用一次（含当前居中设置） |
+| **恢复默认** | 回到配置的默认 `1440 × 900` |
+| **启动时居中** 开关 | 决定恢复时是否居中 |
+| **立即居中** | 只居中，不改尺寸 |
+| **启用尺寸记忆** 开关 | 关闭后既不恢复也不记录 |
 
-The page never touches the window itself. It calls the Host half over a
-package-private RPC channel (`/dsh-window-size`) with
-`ctx.connection.rpc.call`, and the Host answers from the same controller that
-does the startup restore.
+页面本身不碰窗口，它通过包私有 RPC 通道 `/dsh-window-size` 调用 Host 端，Host 端用与启动恢复同一个控制器来执行。
 
-## Install
+## 安装
 
-From the Desktop app's **Plugins** page, install the bundle from this directory,
-or install it through the plugin manager API. A local checkout can also be
-linked into the Desktop profile:
+直接从 GitHub 安装（插件管理器里填写）：
+
+```
+github:home-i/dsh-window-size#v1.1.0
+```
+
+也可以在桌面版 **插件** 页里从本地目录安装。本地开发还可以把包链接进桌面版 profile：
 
 ```jsonc
 // ~/.dsh/profiles/desktop/package.json
@@ -72,16 +61,13 @@ linked into the Desktop profile:
 }
 ```
 
-The bundle then loads on the next launch, and edits to the checkout take effect
-without reinstalling.
+下次启动即生效，之后改动源码也不需要重装。
 
-> Do not replace that `link:` with a hand-made Windows junction and then run
-> `pnpm install`: pnpm removes the entry while installing, and Windows follows a
-> junction into its target, which empties the checkout.
+> 不要把这个 `link:` 换成手工建的 Windows junction 再执行 `pnpm install`：pnpm 安装时会移除该条目，而 Windows 会顺着 junction 进入目标目录，导致源码目录被清空。
 
-## Configuration
+## 配置
 
-The inserted Loader row carries the first-run defaults:
+Loader 行里配置首次启动的默认值：
 
 ```yaml
 # cordis.patch.yml
@@ -89,19 +75,17 @@ The inserted Loader row carries the first-run defaults:
     - id: dsh-window-size
       name: dsh-window-size
       config:
-        width: 1440        # first-run width,  CSS pixels
-        height: 900        # first-run height, CSS pixels
-        center: true       # center the window on every restore
-        enabled: true      # restore and record at all
+        width: 1440        # 首次启动宽度，CSS 像素
+        height: 900        # 首次启动高度，CSS 像素
+        center: true       # 每次恢复都居中
+        enabled: true      # 是否启用恢复与记录
 ```
 
-Sizes are CSS pixels. Width/height are clamped to at least `520 × 600`, and to
-the current monitor's work area at restore time.
+尺寸单位是 CSS 像素；宽高最小被限制为 `520 × 600`，恢复时还会被当前显示器工作区限制。
 
-## State
+## 状态文件
 
-The record lives under the harness home, next to the profile rather than in
-Electron's per-install `userData` directory:
+记录放在 harness home 下，跟随 profile 而不是 Electron 的 `userData`：
 
 ```
 ~/.dsh/dsh-window-size/window-size.json
@@ -117,18 +101,11 @@ Electron's per-install `userData` directory:
 }
 ```
 
-`last` records the most recent action — `restore`, `resize`, `apply`, `remember`,
-`center`, `center-on`, `center-off`, `enabled`, `disabled` — with the achieved
-size, DPI scale, and window title, which is what the settings page displays and
-what makes a bad restore diagnosable. Delete the file to fall back to the
-configured defaults. A schema-v1 file (size + last only) is upgraded in place:
-its size is kept and the new flags take their configured defaults.
+`last` 记录最近一次动作（`restore`、`resize`、`apply`、`remember`、`center`、`center-on`、`center-off`、`enabled`、`disabled`），包含实际达成的尺寸、DPI 缩放和窗口标题——设置页显示的就是它，出问题时也靠它定位。删除这个文件即回到配置默认值。旧版（只有 size + last）的记录会自动升级：尺寸保留，新开关取配置默认。
 
-## RPC contract
+## RPC 约定
 
-The Host registers a prefix route on the Web carrier and admits each request
-through `connection.admit`, so only an authenticated page of the same Host can
-reach the window:
+Host 在 Web carrier 上注册前缀路由，每个请求都先过 `connection.admit`，因此只有本 Host 的已认证页面能操作窗口：
 
 ```
 POST /dsh-window-size/<endpoint>
@@ -137,47 +114,37 @@ content-type: application/json
 { "type": "client-request", "rpcId": "…", "method": "<endpoint>", "payload": … }
 ```
 
-Endpoints: `status`, `apply` (`{width,height}`), `reapply`, `reset`, `center`,
-`remember`, `set-center` (`true|false`), `set-enabled` (`true|false`). Answers use
-the Connection `server-response` envelope; failures come back as
-`{ ok: false, error: { code, message, details } }` with HTTP 200, while a missing
-route, a non-POST request, or a failed admission is `404`/`405`/`401`.
+端点：`status`、`apply`（`{width,height}`）、`reapply`、`reset`、`center`、`remember`、`set-center`（`true|false`）、`set-enabled`（`true|false`）。返回使用 Connection 的 `server-response` 信封；业务失败以 HTTP 200 + `{ ok: false, error: { code, message, details } }` 返回，而路由不存在、非 POST、认证失败分别是 `404` / `405` / `401`。
 
-## Files
+## 文件
 
-| File | Role |
+| 文件 | 作用 |
 |---|---|
-| `index.js` | Host plugin entry; starts the controller and the RPC channel, disposes both. |
-| `window-memory.js` | Controller: window lookup, restore, centering, resize tracking, page actions. |
-| `rpc.js` | Prefix route registration, admission, envelope parsing, endpoint dispatch. |
-| `win32.js` | koffi bindings, DPI scale, monitor work area, window lookup. |
-| `state.js` | Atomic JSON record under the harness home. |
-| `client.js` | Settings page (`settings.section`), localized zh/en. |
-| `cordis.patch.yml` | Loader row the bundle layer inserts. |
+| `index.js` | Host 插件入口；启动控制器与 RPC，并负责释放 |
+| `window-memory.js` | 控制器：查找窗口、恢复、居中、跟踪缩放、处理页面动作 |
+| `rpc.js` | 前缀路由注册、认证、信封解析、端点分发 |
+| `win32.js` | koffi 绑定、DPI、显示器工作区、窗口查找 |
+| `state.js` | harness home 下的原子 JSON 记录 |
+| `client.js` | 设置页（`settings.section`），中英双语 |
+| `cordis.patch.yml` | bundle 层插入的 Loader 行 |
 
-## Requirements
+## 环境要求
 
-- Windows 10/11 x64 or arm64.
-- The DeepSeek Harness **Desktop** app (the Host process of the Electron shell).
-  The window APIs are Win32-only, so the bundle is a no-op elsewhere.
+- Windows 10/11 x64 或 arm64。
+- DeepSeek Harness **桌面版**（Electron shell 的 Host 进程）。窗口 API 是 Win32 的，其它环境不生效。
 
-## Troubleshooting
+## 常见问题
 
-**`dsh: cannot resolve profile bundle "dsh-window-size"`** during a
-package-manager operation means the manifest listed the bundle while
-`node_modules/dsh-window-size` was missing or its link target held no
-`package.json`. The plugin manager's reconcile step resolves every listed
-dependency without a fallback (profile startup only skips and reports it), so
-restore the link or reinstall the bundle.
+**包管理器操作时报 `dsh: cannot resolve profile bundle "dsh-window-size"`**：说明 manifest 里列了这个 bundle，但 `node_modules/dsh-window-size` 不存在、或其链接目标里没有 `package.json`。插件管理器的 reconcile 阶段对所有已列依赖都会严格解析、没有兜底（而启动时只是跳过并报告），补回链接或重装 bundle 即可恢复。
 
-**The settings page says it is unavailable** — the page is running on a Host that
-is not the Desktop app, or `koffi`/`user32` could not be loaded. The reason is
-shown under the message.
+**设置页显示不可用**：当前 Host 不是桌面版，或 `koffi` / `user32` 加载失败；具体原因会显示在提示下方。
 
-**The window comes back at the wrong size** — check `last` in the state file: it
-records what the plugin asked for, what it achieved, the DPI scale, and the
-window title.
+**窗口恢复后的尺寸不对**：查看状态文件里的 `last`，它记录了请求值、实际达成值、DPI 缩放与窗口标题。
 
-## License
+## 许可证
 
-[MIT](LICENSE)
+[MIT](LICENSE) © home-i
+
+---
+
+[English version →](README.en.md)

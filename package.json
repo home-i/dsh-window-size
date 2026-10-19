@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "Remembers the DeepSeek Harness Desktop window size, keeps it centered, and exposes a settings page to set it.",
+  "description": "记住 DeepSeek Harness 桌面版的窗口尺寸并在重启后恢复，默认水平垂直居中，并提供设置页手动调整。",
   "keywords": [
     "dsh",
     "dsh-plugin",
@@ -41,7 +41,7 @@
     "locale/*.json",
     "icon.svg",
     "README.md",
-    "README.zh.md",
+    "README.en.md",
     "LICENSE"
   ],
   "dsh": {
