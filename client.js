@@ -124,6 +124,10 @@ window.__ModuleLoader__.load({
         boxSizing: 'border-box',
       },
       buttons: { display: 'flex', gap: 8, flexWrap: 'wrap' },
+      // The accent (`brand-primary`) is the theme's ink: near-black in the light
+      // theme, near-white in the dark one. Its readable partner is
+      // `label-primary-foreground` (#fff in light, #0f1115 in dark), never a
+      // hard-coded white — that is white-on-white in dark mode (1.05:1).
       primary: {
         font: 'inherit',
         cursor: 'pointer',
@@ -133,8 +137,8 @@ window.__ModuleLoader__.load({
         borderRadius: 999,
         fontSize: 13,
         fontWeight: 500,
-        background: 'var(--dsw-alias-brand-primary,#4f6ef7)',
-        color: '#fff',
+        background: 'var(--dsw-alias-button-primary-fill,var(--dsw-alias-brand-primary,#4f6ef7))',
+        color: 'var(--dsw-alias-label-primary-foreground,#fff)',
       },
       button: {
         font: 'inherit',
@@ -166,7 +170,9 @@ window.__ModuleLoader__.load({
         width: 16,
         height: 16,
         borderRadius: '50%',
-        background: '#fff',
+        // A hairline shadow keeps the knob readable when the thumb and track sit
+        // close in the light theme (white thumb on the light idle track).
+        boxShadow: '0 1px 2px rgba(0,0,0,.24)',
         transition: 'transform 120ms ease',
       },
     }
@@ -188,12 +194,17 @@ window.__ModuleLoader__.load({
           ...styles.toggle,
           background: checked
             ? 'var(--dsw-alias-brand-primary,#4f6ef7)'
-            : 'var(--dsw-alias-border-l2,#9aa3b2)',
+            : 'var(--dsw-alias-state-idle-primary,#9aa3b2)',
           ...(disabled ? styles.disabled : {}),
         },
       }, h('span', {
         style: {
           ...styles.thumb,
+          // Track and knob swap roles per state so the pair always contrasts:
+          // ON = ink track + foreground knob, OFF = idle track + switch thumb.
+          background: checked
+            ? 'var(--dsw-alias-label-primary-foreground,#fff)'
+            : 'var(--dsw-alias-switch-thumb,#fff)',
           transform: checked ? 'translateX(16px)' : 'translateX(0)',
         },
       }))

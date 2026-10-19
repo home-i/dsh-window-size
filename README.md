@@ -42,7 +42,7 @@
 直接从 GitHub 安装（插件管理器里填写）：
 
 ```
-github:home-i/dsh-window-size#v1.1.1
+github:home-i/dsh-window-size#v1.1.2
 ```
 
 也可以在桌面版 **插件** 页里从本地目录安装。本地开发还可以把包链接进桌面版 profile：
