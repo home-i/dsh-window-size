@@ -1,0 +1,7 @@
+# Normalize line endings on commit; check out LF everywhere.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.webp binary
+*.ico binary

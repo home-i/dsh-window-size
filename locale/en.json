@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Window Size Memory",
+    "description": "Remembers the desktop window width and height across restarts, keeps it centered, and adds a settings page to set the size."
+  }
+}

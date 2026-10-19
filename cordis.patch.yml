@@ -1,0 +1,8 @@
+- insert:
+    - id: dsh-window-size
+      name: dsh-window-size
+      config:
+        width: 1440
+        height: 900
+        center: true
+        enabled: true

@@ -1,0 +1,9 @@
+node_modules/
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Local state written by the plugin when DSH_HOME points at the checkout.
+window-size.json
+.dsh-ops-update-*.lock
